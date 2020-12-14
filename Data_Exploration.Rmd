@@ -1,0 +1,64 @@
+---
+title: "Data_Exploration"
+author: "Yixuan He"
+date: "10/9/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r}
+library(data.table)
+library(dplyr)
+```
+
+```{r}
+df<-read.csv('collapsed_file_with_single_visit_and_exclusion_criteria_applied.csv')
+
+dfnow<-df[c(2:20,grep('demographics',colnames(df)),grep('_now',colnames(df)))]
+dfnow$demographics_family_id<-NULL #too many levels
+
+empty_as_na <- function(x){ ##helper code taken from https://stackoverflow.com/a/33952598
+    if("factor" %in% class(x)) x <- as.character(x) ## since ifelse wont work with factors
+    ifelse(as.character(x)!="", x, NA)
+}
+
+## transform all columns so that empty columns are NA
+dfnow<-dfnow %>% mutate_each(funs(empty_as_na)) 
+
+dfnow<-dfnow[, sapply(dfnow, function(col) length(table(col))) > 1] #keep only columns with at least 2 unique values
+
+colnames(dfnow)
+```
+
+First, we will do a univariate regresison for phenotype against all variables
+```{r}
+assoc_tab<-c()
+y=as.numeric(as.factor(dfnow$medicalhx_icd_now))-1
+
+for (i in c(2:ncol(dfnow))){ 
+  x=dfnow[,i]
+  temp<-data.frame(summary(glm(y~x,family='binomial'))$coefficients[-1,])
+   if(ncol(temp)!=1){
+    row.names(temp)<-paste(colnames(dfnow)[i],substring(row.names(temp), 2),sep=':')
+  }
+  if(ncol(temp)==1){
+    temp<-data.frame(t(temp))
+    colnames(temp)<-c('Estimate','Std..Error','z.value','Pr...z..')
+    row.names(temp)<-colnames(dfnow)[i]
+  }
+  temp$N<-length(which(is.na(x)==FALSE))
+  assoc_tab<-rbind(assoc_tab,temp)
+}
+assoc_tab<-setDT(assoc_tab, keep.rownames = TRUE)[] #change rownames to first column
+colnames(assoc_tab)<-c('var:response','beta_estimate','std.error','z','p','N')
+assoc_tab<-assoc_tab[-which(assoc_tab$`var:response`=='medicalhx_icd_now')]
+
+assoc_tab$fdr<-p.adjust(assoc_tab$p,method='fdr')
+
+significant<-assoc_tab[which(assoc_tab$fdr<0.05),]
+
+```
+```{r}
+significant
+```
+

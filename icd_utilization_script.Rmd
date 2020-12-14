@@ -1,0 +1,171 @@
+---
+title: "SHARE Analysis"
+author: "Victor Nauffal"
+date: "9/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Data Import and Applying Inclusion/Exclusion Criteria
+```{r pressure, echo=FALSE}
+
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(tidylog)
+library(janitor)
+library(labelled)
+library(naniar)
+
+raw_data<-read.csv("/Users/victornauffal/Dropbox (Partners HealthCare)/Peter Marstarand/ICD Utilization/2020 Q2 Data/sharedata_2020q2.csv", sep=",")
+dim(raw_data)
+head(raw_data)
+names(raw_data)[1:641]<-tolower(names(raw_data)[1:641])
+names(raw_data)
+names(raw_data)[grep("diagnosis",names(raw_data))]
+table(raw_data$demographics_primary_diagnosis,useNA="always")##All participants have HCM diagnosis
+
+summary(raw_data$demographics_diagnosis_age)
+table(raw_data$demographics_diagnosis_age_group_pediatric,useNA="always")
+data<-raw_data %>% filter(!demographics_diagnosis_age_group_pediatric=="<18")##Excluding 1,427 individuals with pediatric diagnosis
+table(data$demographics_diagnosis_age_group,useNA="always")#2760 individuals with missing age at diagnosis
+summary(data$demographics_diagnosis_age)
+names(data)[grep("first",names(raw_data))]
+head(data[,c("pid","firstvisit","eventyear")])
+sapply(as.data.frame(data[is.na(data$demographics_diagnosis_age),c("firstvisit")]),summary)
+sapply(as.data.frame(data[is.na(data$demographics_diagnosis_age),c("firstvisit")]),length)
+summary(data$demographics_diagnosis_year)
+sapply(as.data.frame(data[is.na(data$demographics_diagnosis_age),][,c("demographics_diagnosis_year")]),summary)
+test<-sapply(as.data.frame(data[is.na(data$demographics_diagnosis_age),][,c("demographics_diagnosis_year")]),is.na)
+table(test)#Everyone with a missing age at diagnosis has a missing diagnosis year
+names(raw_data)[grep("years",names(raw_data))]
+summary(data$yearssinceprimarydiagnosis)
+sapply(as.data.frame(data[is.na(data$demographics_diagnosis_age),][,c("yearssinceprimarydiagnosis")]),summary)
+test<-sapply(as.data.frame(data[is.na(data$demographics_diagnosis_age),][,c("yearssinceprimarydiagnosis")]),is.na)
+table(test)#Everyone with a missing age at diagnosis has missing years since primary diagnosis
+#Since age at diagnosis, year of diagnosis and years since primary diagnosis are all missing together then it is not possible to calculate age at diagnosis for those with missing data##
+##Thus for those with missing age at diagnosis we will exclude individuals whose age at first vist was less than 18##
+summary(data$firstvisit)
+sapply(as.data.frame(data[is.na(data$demographics_diagnosis_age),][,c("firstvisit")]),summary)
+sapply(as.data.frame(data[is.na(data$demographics_diagnosis_age),][,c("firstvisit")]),length)
+data<-data %>% filter(!((firstvisit<18) & is.na(demographics_diagnosis_age) & !is.na(firstvisit)))#Excluded 37 patients with age at first visit<18 and missing age at diagnosis
+sapply(as.data.frame(data[is.na(data$demographics_diagnosis_age),][,c("firstvisit")]),summary)
+sapply(as.data.frame(data[is.na(data$demographics_diagnosis_age),][,c("firstvisit")]),length)
+##We will drop individuals with missing age at diagnosis and missing age at firstvisit as there is no way to approximate age at diagnosis.For the remainder of individuals we will use first visit as surrogate for diagnosis age and keep them in the cohort if age >18
+data<-data %>% filter(!(is.na(firstvisit) & is.na(demographics_diagnosis_age)))##We excluded 51 patients with missing age at diagnosis and age at first visit.Cohort is left with those who have an adult diagnosis age or missing diagnosis age but adult age at time of first visit
+data<-data %>% mutate(age_diagnosis=case_when(is.na(demographics_diagnosis_age)~firstvisit,TRUE~demographics_diagnosis_age))
+summary(data$age_diagnosis)
+
+
+summary(data$demographics_diagnosis_year)
+data<-data %>% filter(demographics_diagnosis_year>=2000 | is.na(demographics_diagnosis_year))#Excluding individuals diagnosed before year 2000. 1,252 patients excluded.
+summary(data$demographics_diagnosis_year)
+data<-data[order(data$pid, data$age),]
+head(data,20)
+data<-data %>% group_by(pid) %>% mutate(replicate=seq(n()))
+head(data[,c("pid","age","replicate")],20)
+sapply(as.data.frame(data[data$replicate==1,][,c("eventyear")]),summary)
+data<-data %>% mutate(status=ifelse((replicate==1 & eventyear<2000),1,0))
+table(data$status)
+test<-data[data$status==1,][,c("pid")]
+data<-data[!data$pid%in%test$pid, ]##Excluding 545 individuals with missing year of diagnosis and who had their first visit before 2000
+##Cohort is left with those diagnosed after 2000 or those without a known year of diagnosis but who had a first visit after 2000
+
+summary(data$yearssinceprimarydiagnosis)##Can be negative as a small number of patients were enrolled prior to the time of HCM diagnosis
+head(data[order(data$yearssinceprimarydiagnosis),][,c("pid","yearssinceprimarydiagnosis")])
+data<-mutate(data, diff=firstvisit-demographics_diagnosis_age)
+summary(data$diff)
+data<-data %>% filter(yearssinceprimarydiagnosis>=0 |is.na(yearssinceprimarydiagnosis))##Excluding follow-up time for individuals before their HCM diagnosis. This completely excludes 196 patients.
+
+
+
+
+
+
+
+```
+```{r}
+##Analysis of ICD Implant Rates in US vs. Non-US
+names(data)[grep("icd",names(data))]
+table(data$medicalhx_icd_now,useNA="always")
+table(data$medicalhx_icd_now,data$medicalhx_icd_inappropriate_firing_now,useNA="always")
+table(data$medicalhx_icd_now,data$medicalhx_icd_appropriate_firing_now,useNA="always")
+table(data$medicalhx_icd_now,data$medicalhx_icd_appropriate_firing_nonatp_now,useNA="always")
+table(data$medicalhx_icd_now,data$medicalhx_icd_ever,useNA="always")
+table(data$medicalhx_icd,data$medicalhx_icd_indication,useNA="always")
+table(data$medicalhx_icd_now,data$medicalhx_icd_indication,useNA="always")
+table(data$medicalhx_icd_ever,data$medicalhx_icd_indication,useNA="always")
+table(data$medicalhx_icd_history,data$medicalhx_icd,useNA="always")
+table(data$medicalhx_icd_history,data$medicalhx_icd_now,useNA="always")
+table(data$medicalhx_icd_history,data$medicalhx_icd_ever,useNA="always")
+table(data$medicalhx_icd_history,data$medicalhx_icd_indication,useNA="always")
+
+test<-data[((data$medicalhx_icd_indication=="Primary"|data$medicalhx_icd_indication=="Secondary") & is.na(data$medicalhx_icd)),][,c("pid","age","medicalhx_icd","medicalhx_icd_indication","replicate","firstvisit","medicalhx_icd_now","medicalhx_icd_ever","medicalhx_icd_history")]
+head(test,10)
+test1<-data[(data$pid==1001292 | data$pid==1001752|data$pid==1003180|data$pid==1003304|data$pid==1003697| data$pid==1004453 |data$pid==1011991),c("pid","age","medicalhx_icd","medicalhx_icd_indication","medicalhx_icd_indication_ever","replicate","firstvisit","medicalhx_icd_now","medicalhx_icd_ever","medicalhx_icd_history")]
+head(test1,25)
+dim(test1)
+test2<-raw_data[raw_data$pid==1004453,c("pid","age","medicalhx_icd","medicalhx_icd_indication","firstvisit","medicalhx_icd_now","medicalhx_icd_ever","medicalhx_icd_history","demographics_diagnosis_age")]
+###7/7 IDs have ICD indication reported at a later time after ICD implant with no change in ICD indication.Might reflect device change? There is no change in ICD indication between the 2 instances
+data[((data$medicalhx_icd_indication=="Primary"|data$medicalhx_icd_indication=="Secondary") & is.na(data$medicalhx_icd)),c("medicalhx_icd_indication")]<-""##Removed duplicated ICD indication entries in the above 7 cases
+table(data$medicalhx_icd,data$medicalhx_icd_indication,useNA="always")
+table(data$medicalhx_icd_now,data$medicalhx_icd_indication,useNA="always")
+table(data$medicalhx_icd_ever,data$medicalhx_icd_indication,useNA="always")
+table(data$medicalhx_icd_ever,data$medicalhx_icd_indication_ever,useNA="always")
+data<-data %>% filter(!(medicalhx_icd_indication_ever=="Secondary"))
+data<-data %>% filter(!(medicalhx_icd_indication_ever=="Unknown"))
+table(data$medicalhx_icd_ever,data$medicalhx_icd_indication_ever,useNA="always")
+data<-data %>% filter(!(medicalhx_icd_indication_ever=="" & medicalhx_icd_ever=="Yes"))
+table(data$medicalhx_icd_ever,data$medicalhx_icd_indication_ever,useNA="always")##Excluding 141 Individuals with Secondary Indication and 3 with Unknown ICD indication
+
+table(data$medicalhx_icd_ever,data$medicalhx_icd,useNA="always")
+data<-data %>% filter(medicalhx_icd==1 | medicalhx_icd_ever=="No")##Including only visit at ICD implant for those with ICD
+table(data$medicalhx_icd_ever,data$medicalhx_icd,useNA="always")
+
+data<-data[order(data$pid, -data$age),]
+head(data,20)
+data<-data %>% group_by(pid) %>% mutate(replicate=seq(n()))
+head(data[,c("pid","age","replicate")])
+table(data$replicate,data$medicalhx_icd,useNA="always")
+data<-data %>% filter(replicate==1)##Including only last follow-up visit for individuals without ICD implant
+write.csv(data,file="collapsed_file_with_single_visit_and_exclusion_criteria_applied.csv", sep="")
+
+names(data)[grep("us",names(data))]
+table(data$isus,useNA="always")
+names(data)[grep("now",names(data))]
+tabyl(data,isus,medicalhx_icd,show_na =TRUE) %>% adorn_percentages(denominator = "row") %>% adorn_ns() 
+
+
+test1<-data %>% select(pid, ends_with("now"))
+length(test1)
+summary(test1)
+
+var_label(test1[,c(1:73)])<-names(test1)[]
+var_label(test1)
+
+test1<-test1 %>% replace_with_na_all(condition=~.x=='')
+
+for (i in (2:73)){
+  print(tabyl(test1,names(test1)[i],show_na =TRUE))
+}
+
+test2<-data %>% select(pid, ends_with("history"))
+length(test2)
+summary(test2)
+
+var_label(test2[,c(1:57)])<-names(test2)[]
+var_label(test2)
+
+test2<-test2 %>% replace_with_na_all(condition=~.x=='')
+
+for (i in (2:57)){
+  print(tabyl(test2,names(test2)[i],show_na =TRUE))
+}
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

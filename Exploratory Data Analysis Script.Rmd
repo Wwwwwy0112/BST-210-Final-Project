@@ -1,0 +1,88 @@
+---
+title: "Exploratory Analysis"
+author: "Victor Nauffal"
+date: "10/9/2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## Exploratory Data Analysis
+```{r pressure, echo=TRUE}
+
+library(ggplot2)
+
+setwd("/Users/victornauffal/Dropbox (Partners HealthCare)/BST210 Group Project/Exploratory Data Analysis")
+##Evaluating Distribution of Continuous Variables Across Strata of our Binary Outcome (ICD Implant:Yes vs. No)
+
+##Plotting Denisty Histograms
+ggplot(data=data, aes(x=age, fill=factor(medicalhx_icd_now)))+
+  geom_histogram(aes(y=..density..),binwidth=5, fill="white", colour="black")+
+  geom_density(alpha=0.3, fill="#FF6666")+
+  facet_grid(cols=vars(medicalhx_icd_now), scales= "free_y")+
+  labs(title="Primary Prevention ICD Implantation")
+
+
+ggplot(data=data, aes(x=bmi, fill=factor(medicalhx_icd_now)))+
+  geom_histogram(aes(y=..density..),binwidth=5, fill="white", colour="black")+
+  geom_density(alpha=0.3, fill="#FF6666")+
+  facet_grid(cols=vars(medicalhx_icd_now), scales= "free_y")+
+  labs(title="Primary Prevention ICD Implantation")
+
+ggplot(data=data, aes(x=esc_riskscore, fill=factor(medicalhx_icd_now)))+
+  geom_histogram(aes(y=..density..),binwidth=0.5, fill="white", colour="black")+
+  geom_density(alpha=0.3, fill="#FF6666")+
+  facet_grid(cols=vars(medicalhx_icd_now), scales= "free_y")+
+  labs(title="Primary Prevention ICD Implantation")
+
+ggplot(data=data, aes(x=clinicvisit_bp_systolic, fill=factor(medicalhx_icd_now)))+
+  geom_histogram(aes(y=..density..),binwidth=10, fill="white", colour="black")+
+  geom_density(alpha=0.3, fill="#FF6666")+
+  facet_grid(cols=vars(medicalhx_icd_now), scales= "free_y")+
+  labs(title="Primary Prevention ICD Implantation")
+
+
+ggplot(data=data, aes(x=echo_lvef, fill=factor(medicalhx_icd_now)))+
+  geom_histogram(aes(y=..density..),binwidth=5, fill="white", colour="black")+
+  geom_density(alpha=0.3, fill="#FF6666")+
+  facet_grid(cols=vars(medicalhx_icd_now), scales= "free_y")+
+  labs(title="Primary Prevention ICD Implantation", x="Left Ventricular Ejection Fraction")
+
+
+
+descriptive<-data %>% select (age,bmi,esc_riskscore,isus,demographics_sex,geneticstatus,echo_lvef,clinicvisit_bp_systolic,clinicvisit_nyha_atleast3_now, medicationhx_beta_blocker,medicationhx_aad,medicationhx_calcium_channel_blocker,medicalhx_icd_now)
+summary(descriptive)
+descriptive<-descriptive %>% 
+  mutate(demographics_sex=factor(demographics_sex),
+  isus=factor(isus),
+  geneticstatus=factor(geneticstatus),
+  clinicvisit_nyha_atleast3_now=factor(clinicvisit_nyha_atleast3_now),
+  medicationhx_beta_blocker=factor(medicationhx_beta_blocker),
+  medicationhx_calcium_channel_blocker=factor(medicationhx_calcium_channel_blocker),
+  medicalhx_icd_now=factor(medicalhx_icd_now),
+  medicationhx_aad=factor(medicationhx_aad))
+
+tab1 <- descriptive %>% filter(isus=="Yes") %>% CreateTableOne(
+  data = .,
+  vars = c("age","bmi","esc_riskscore","medicalhx_icd_now","demographics_sex","geneticstatus","echo_lvef","clinicvisit_bp_systolic","clinicvisit_nyha_atleast3_now","medicationhx_beta_blocker","medicationhx_aad","medicationhx_calcium_channel_blocker"),
+  factorVars = c("demographics_sex","geneticstatus","clinicvisit_nyha_atleast3_now","medicationhx_beta_blocker","medicationhx_aad","medicationhx_calcium_channel_blocker","medicalhx_icd_now")
+)
+print(tab1, pDigits = 2)
+
+tab2 <- descriptive %>% filter(isus=="No") %>% CreateTableOne(
+  data = .,
+  vars = c("age","bmi","esc_riskscore","medicalhx_icd_now","demographics_sex","geneticstatus","echo_lvef","clinicvisit_bp_systolic","clinicvisit_nyha_atleast3_now","medicationhx_beta_blocker","medicationhx_aad","medicationhx_calcium_channel_blocker"),
+  factorVars = c("demographics_sex","geneticstatus","clinicvisit_nyha_atleast3_now","medicationhx_beta_blocker","medicationhx_aad","medicationhx_calcium_channel_blocker","medicalhx_icd_now")
+)
+print(tab2, pDigits = 2)
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

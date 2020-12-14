@@ -1,0 +1,546 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+####Table One####
+###Baseline Characteristics at Enrollment##
+tt<-data
+tt<-tt[order(tt$pid, tt$age),]
+tt<-tt %>% group_by(pid) %>% mutate(replicate=seq(n()))
+table(duplicated(tt$pid))
+summary(tt$replicate)
+head(tt[,c("pid","age","replicate")],100)
+
+tt<-tt[order(tt$pid, tt$age),]###Generating Carry Forward LA Diameter
+tt$test<-tt$echo_la
+tt<-tt %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("down")) %>%
+  dplyr::ungroup()
+head(tt[order(-tt$pid),c("pid","echo_la","test")],500)
+
+tt<-tt %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("up")) %>%
+  dplyr::ungroup()
+head(tt[order(-tt$pid),c("pid","echo_la","test")],500)
+tt$echo_la_carryforward<-tt$test
+
+
+tt<-tt[order(tt$pid, tt$age),]###Generating Carry Forward ESC Risk Score
+tt$test<-tt$esc_riskscore
+tt<-tt %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("down")) %>%
+  dplyr::ungroup()
+head(tt[order(-tt$pid),c("pid","esc_riskscore","test")],500)
+
+tt<-tt %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("up")) %>%
+  dplyr::ungroup()
+head(tt[order(-tt$pid),c("pid","esc_riskscore","test")],500)
+tt$esc_riskscore_carryforward<-tt$test
+
+tt<-tt[order(tt$pid, tt$age),]###Generating Carry Forward LV Wall Thickness
+tt$test<-tt$echo_max_lv_thickness
+tt<-tt %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("down")) %>%
+  dplyr::ungroup()
+head(tt[order(-tt$pid),c("pid","echo_max_lv_thickness","test")],500)
+
+tt<-tt %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("up")) %>%
+  dplyr::ungroup()
+head(tt[order(-tt$pid),c("pid","echo_max_lv_thickness","test")],500)
+tt$echo_max_lv_thickness_carryforward<-tt$test
+
+tt<-tt[order(tt$pid, tt$age),]###Generating Carry Forward EF
+tt$test<-tt$ef
+tt<-tt %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("down")) %>%
+  dplyr::ungroup()
+head(tt[order(-tt$pid),c("pid","ef","test")],500)
+
+tt<-tt %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("up")) %>%
+  dplyr::ungroup()
+head(tt[order(-tt$pid),c("pid","ef","test")],500)
+tt$ef_carryforward<-tt$test
+
+tt<-tt[order(tt$pid, tt$age),]###Generating Carry Forward Max LVOT Gradient
+tt$test<-tt$max_lvoto
+tt<-tt %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("down")) %>%
+  dplyr::ungroup()
+head(tt[order(-tt$pid),c("pid","max_lvoto","test")],500)
+
+tt<-tt %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("up")) %>%
+  dplyr::ungroup()
+head(tt[order(-tt$pid),c("pid","max_lvoto","test")],500)
+tt$max_lvoto_carryforward<-tt$test
+
+tt<-tt %>% mutate(eventyear_cat=case_when(eventyear<=2005~"1",eventyear<=2009~"2",eventyear<=2014~"3",eventyear<=2020~"4"))
+table(tt$eventyear_cat,useNA="always")
+tt<-tt %>% filter(replicate==1)
+table(duplicated(tt$pid))
+
+descriptive<-tt %>% select (age,age_cat,bmi,esc_riskscore_carryforward,isus,demographics_sex,white,medicalhx_afib_now,medicalhx_htn_now,eventyear_cat,medicalhx_cad_now,sarc_plp,medicalhx_icd_now,medicalhx_scd_family_hx, medicalhx_nsvt_now, medicalhx_syncope_now,medicalhx_septal_reduction_therapy_now,medicalhx_etoh_ablation_now,ef_carryforward,echo_la_carryforward,max_lvoto_carryforward,echo_max_lv_thickness_carryforward)
+
+
+summary(descriptive)
+descriptive<-descriptive %>% 
+  mutate(demographics_sex=factor(demographics_sex),
+  isus=factor(isus),
+  age_cat=factor(age_cat),
+  white=factor(white),
+  medicalhx_afib_now=factor(medicalhx_afib_now),
+  medicalhx_htn_now=factor(medicalhx_htn_now),
+  sarc_plp=factor(sarc_plp),
+  eventyear_cat=factor(eventyear_cat),
+  medicalhx_cad_now=factor(medicalhx_cad_now),
+  medicalhx_icd_now=factor(medicalhx_icd_now),
+  medicalhx_scd_family_hx=factor(medicalhx_scd_family_hx),
+  medicalhx_nsvt_now=factor(medicalhx_nsvt_now),
+  medicalhx_syncope_now=factor(medicalhx_syncope_now),
+  medicalhx_etoh_ablation_now=factor(medicalhx_etoh_ablation_now),
+  medicalhx_septal_reduction_therapy_now=factor(medicalhx_septal_reduction_therapy_now))
+
+
+myvars<-c("age","age_cat","bmi","esc_riskscore_carryforward","isus","demographics_sex","white","medicalhx_afib_now","medicalhx_htn_now","eventyear_cat","medicalhx_cad_now","sarc_plp","medicalhx_icd_now","medicalhx_scd_family_hx", "medicalhx_nsvt_now", "medicalhx_syncope_now","medicalhx_septal_reduction_therapy_now","medicalhx_etoh_ablation_now","ef_carryforward","echo_la_carryforward","max_lvoto_carryforward","echo_max_lv_thickness_carryforward")
+
+catvars<- c("age_cat","isus","demographics_sex","white","medicalhx_afib_now","medicalhx_htn_now","eventyear_cat","medicalhx_cad_now","sarc_plp","medicalhx_icd_now","medicalhx_scd_family_hx", "medicalhx_nsvt_now", "medicalhx_syncope_now","medicalhx_septal_reduction_therapy_now","medicalhx_etoh_ablation_now")
+
+
+tab<-CreateTableOne(vars=myvars, data=descriptive, factorVars =catvars,strata="isus")
+print(tab, nonnormal = "esc_riskscore_carryforward", formatOptions = list(big.mark = ","))
+
+
+```
+
+A
+```{r}
+##Analysis of ICD Implant Rates in US vs. Non-US
+tt<-data
+tt<-tt[order(tt$pid, tt$age),]
+head(tt,20)
+tt<-tt %>% group_by(pid) %>% mutate(replicate=seq(n()))
+names(tt)[grep("icd",names(tt))]
+table(tt[tt$replicate==1,"medicalhx_icd_now"])
+test<-tt %>% filter(replicate==1 & medicalhx_icd_now=="Yes")##Excluding individuals with ICD at time of enrollment
+tt<-tt[!(tt$pid%in%test$pid),]
+table(duplicated(tt$pid))
+table(tt[tt$replicate==1,"medicalhx_icd_now"])
+
+
+table(tt$medicalhx_icd_now,useNA="always")
+table(tt$medicalhx_icd_now,tt$medicalhx_icd_inappropriate_firing_now,useNA="always")
+table(tt$medicalhx_icd_now,tt$medicalhx_icd_appropriate_firing_now,useNA="always")
+table(tt$medicalhx_icd_now,tt$medicalhx_icd_appropriate_firing_nonatp_now,useNA="always")
+table(tt$medicalhx_icd_now,tt$medicalhx_icd_ever,useNA="always")
+table(tt$medicalhx_icd,tt$medicalhx_icd_indication,useNA="always")
+table(tt$medicalhx_icd_now,tt$medicalhx_icd_indication,useNA="always")
+table(tt$medicalhx_icd_ever,tt$medicalhx_icd_indication,useNA="always")
+table(tt$medicalhx_icd_history,tt$medicalhx_icd,useNA="always")
+table(tt$medicalhx_icd_history,tt$medicalhx_icd_now,useNA="always")
+table(tt$medicalhx_icd_history,tt$medicalhx_icd_ever,useNA="always")
+table(tt$medicalhx_icd_history,tt$medicalhx_icd_indication,useNA="always")
+
+test<-tt[((tt$medicalhx_icd_indication=="Primary"|tt$medicalhx_icd_indication=="Secondary") & !is.na(tt$medicalhx_icd_indication) & is.na(tt$medicalhx_icd)),][c("pid","age","medicalhx_icd","medicalhx_icd_indication","medicalhx_icd_indication_ever","replicate","firstvisit","medicalhx_icd_now","medicalhx_icd_ever","medicalhx_icd_history")]
+head(test,10)
+test1<-tt[(tt$pid==1001292 | tt$pid==1001752|tt$pid==1003180|tt$pid==1003304|tt$pid==1003697| tt$pid==1004453 |tt$pid==1011991),c("pid","age","medicalhx_icd","medicalhx_icd_indication","medicalhx_icd_indication_ever","replicate","firstvisit","medicalhx_icd_now","medicalhx_icd_ever","medicalhx_icd_history")]
+head(test1,25)
+dim(test1)
+test2<-raw_data[raw_data$pid==1004453,c("pid","age","medicalhx_icd","medicalhx_icd_indication","firstvisit","medicalhx_icd_now","medicalhx_icd_ever","medicalhx_icd_history","demographics_diagnosis_age")]
+head(test2)
+###7/7 IDs have ICD indication reported at a later time after ICD implant with no change in ICD indication.Might reflect device change? There is no change in ICD indication between the 2 instances
+tt[((tt$medicalhx_icd_indication=="Primary"|tt$medicalhx_icd_indication=="Secondary") &!is.na(tt$medicalhx_icd_indication) & is.na(tt$medicalhx_icd)),c("medicalhx_icd_indication")]<-NA_character_##Removed duplicated ICD indication entries in the above 7 cases
+table(tt$medicalhx_icd,tt$medicalhx_icd_indication,useNA="always")
+table(tt$medicalhx_icd_now,tt$medicalhx_icd_indication,useNA="always")
+table(tt$medicalhx_icd_ever,tt$medicalhx_icd_indication,useNA="always")
+table(tt$medicalhx_icd_ever,tt$medicalhx_icd_indication_ever,useNA="always")
+tt<-tt %>% filter(!(medicalhx_icd_indication_ever=="Secondary") | is.na(medicalhx_icd_indication_ever))###Excluding Secondary Indication ICDs
+table(tt$medicalhx_icd_ever,tt$medicalhx_icd_indication_ever,useNA="always")
+
+
+table(tt$medicalhx_icd,tt$medicalhx_icd_now,useNA="always")
+tt<-tt %>% filter(!(medicalhx_icd_now=="Yes" & is.na(medicalhx_icd)))
+tt<-tt[order(tt$pid,tt$age),]
+tt<-tt %>% group_by(pid) %>% mutate(replicate_new=seq(n()))
+tt<-tt[order(tt$pid,-tt$age),]
+tt<-tt %>% group_by(pid) %>% mutate(replicate_reverse=seq(n()))
+ungroup(tt)
+head(tt[,c("pid","age","replicate_new","replicate_reverse","replicate")],100)
+tt<-tt[order(tt$pid,tt$age),]
+tt<-tt %>% group_by(pid) %>% mutate(age_reference=case_when(replicate_new==1~age)) %>% 
+fill(age_reference)
+summary(tt$age_reference)
+head(tt[,c("pid","age","age_reference","replicate_new","replicate")],100)
+tt<-tt %>% mutate(time=age-age_reference)
+summary(tt$time)
+head(tt[,c("pid","age","replicate_new","replicate","time")],100)
+tt<-setDT(tt)
+tt[, time_1 := c(time[-1], NA ), by = .(pid)]
+head(tt[,c("pid","age","replicate_new","replicate","replicate_reverse","time","time_1")],100)
+tt<-as.data.frame(tt)
+summary(tt$time_1)
+summary(tt[is.na(tt$time_1),"replicate_reverse"])
+tt<-tt %>% mutate(time_1=case_when(replicate_reverse==1~(time+0.01),TRUE~time_1))
+head(tt[,c("pid","age","replicate_new","replicate","replicate_reverse","time","time_1")],100)
+summary(tt$time_1)
+tt<-tt %>% mutate(medicalhx_icd_now=case_when(medicalhx_icd_now=="Yes"~1,TRUE~0))
+tt<-tt %>% mutate(enrollment_year=ifelse((replicate_new==1),eventyear,NA_real_))
+tt<-tt[order(tt$pid,tt$age),]
+tt<-tt %>% group_by(pid) %>% fill(enrollment_year)
+head(tt[,c("pid","age","replicate_new","replicate","replicate_reverse","time","time_1","eventyear","enrollment_year")],40)
+tt<-tt %>% mutate(enrollment_year_cat=case_when(enrollment_year<=2005~"1",enrollment_year<=2009~"2",enrollment_year<=2014~"3",enrollment_year<=2020~"4"))
+table(tt$enrollment_year_cat,useNA="always")
+
+
+##Cox Regression For Primary Prevention ICD Implant in Full Cohort##
+ll<-tt %>% filter(time<=10) 
+table(ll[ll$time_1>10,"medicalhx_icd_now"],useNA = "always")
+ll$time_1[ll$time_1>10]=10
+table(duplicated(ll$pid))
+ll$Sites<-ll$isus
+ll<-ll %>% mutate(Sites=case_when(isus=="Yes"~"US",isus=="No"~"Non-US"))
+model1<-coxph(Surv(time,time_1,medicalhx_icd_now) ~ isus + enrollment_year_cat + cluster(pid),ll)
+summary(model1)
+surv_object_10<-Surv(ll$time,ll$time_1, ll$medicalhx_icd_now)
+sfit_10 <- survfit(surv_object_10 ~ Sites, data = ll)
+ggsurvplot(sfit_10, data=ll,risk.table="nrisk_cumevents",fun="cumhaz",surv.plot.height=0.72,risk.table.height=0.28,palette="lancet",ylim=c(0,0.5),ggtheme=theme_classic2(), xlab="Time (Years)", ylab="Cumulative Incidence of Primary Prevention ICD Implant")
+plot(sfit_10, fun = "cloglog", xlab = "Log(Time in Years)",ylab = "log-log survival", main = "Log-log curve by US vs. Non-US Site") 
+
+
+
+
+ll<-ll %>% group_by(pid) %>%  mutate(esc_riskscore_mean=mean(esc_riskscore,na.rm=TRUE))##Generating Mean ESC risk Score
+ungroup(ll)
+head(ll[order(-ll$pid),c("pid","esc_riskscore","esc_riskscore_mean")],30)
+ll<-ll %>% select(-esc_riskscore_max)
+test<-setDT(ll)[ , .SD[which.max(esc_riskscore)], by = pid]##Generating Max ESC score during follow-up
+dim(test)
+summary(test$esc_riskscore)
+test$esc_riskscore_max<-test$esc_riskscore
+test<-test %>% select("pid","esc_riskscore_max")
+ll<-merge(ll,test,all.x=TRUE)
+dim(ll)
+head(ll[order(-ll$pid),c("pid","esc_riskscore","esc_riskscore_max", "esc_riskscore_mean")],30)
+ll<-ll %>% mutate(esc_riskscore_mean_cat=case_when(esc_riskscore_mean<=4~"<=4",(esc_riskscore_mean>4 & esc_riskscore_mean<=6)~"4-6",(esc_riskscore_mean>6 & !is.na(esc_riskscore_mean))~">6",TRUE~NA_character_))
+table(ll$esc_riskscore_mean_cat,useNA = "always")
+ll<-ll %>% mutate(esc_riskscore_max_cat=case_when(esc_riskscore_max<=4~"<=4",(esc_riskscore_max>4 & esc_riskscore_max<=6)~"4-6",(esc_riskscore_max>6 & !is.na(esc_riskscore_max))~">6",TRUE~NA_character_))
+table(ll$esc_riskscore_max_cat,useNA = "always")
+
+ll$test<-ll$esc_riskscore###Generating Carry Forward ESC risk score
+ll<-ll %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("down")) %>%
+  dplyr::ungroup()
+head(ll[order(-ll$pid),c("pid","esc_riskscore","esc_riskscore_max", "esc_riskscore_mean","test")],500)
+
+ll<-ll %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("up")) %>%
+  dplyr::ungroup()
+head(ll[order(-ll$pid),c("pid","esc_riskscore","esc_riskscore_max", "esc_riskscore_mean","test")],500)
+ll$esc_riskscore_carryforward<-ll$test
+ll<-ll %>% mutate(esc_riskscore_carryforward_cat=case_when(esc_riskscore_carryforward<=4~"<=4",(esc_riskscore_carryforward>4 & esc_riskscore_carryforward<=6)~"4-6",(esc_riskscore_carryforward>6 & !is.na(esc_riskscore_carryforward))~">6",TRUE~NA_character_))
+table(ll$esc_riskscore_carryforward_cat,useNA = "always")
+
+model2<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ isus + enrollment_year_cat+esc_riskscore_carryforward_cat+ cluster(pid),ll)
+summary(model2)
+
+mm<-ll[!(is.na(ll$esc_riskscore_carryforward_cat)),]
+table(duplicated(mm$pid))
+
+vars<-c("age_cat","white","demographics_sex","medicalhx_afib_now","medicalhx_cad_now","medicalhx_scd_family_hx","medicalhx_nsvt_now", "medicalhx_syncope_now","medicalhx_septal_reduction_therapy_now","enrollment_year_cat","echo_max_lv_thickness_carryforward_30", "echo_la_carryforward_40","max_lvoto_carryforward_50","ef_carryforward_50")
+
+for (i in vars){
+  print(i)
+  print(table(is.na(ll[[i]])))
+}
+
+model2<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ isus + enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now + cluster(pid),ll)
+summary(model2)
+
+ll<-ll %>% group_by(pid) %>%  mutate(echo_la_mean=mean(echo_la,na.rm=TRUE))##Generating Mean la volume
+ungroup(ll)
+head(ll[order(-ll$pid),c("pid","echo_la","echo_la_mean")],30)
+ll<-ll %>% select(-echo_la_max)
+test<-setDT(ll)[ , .SD[which.max(echo_la)], by = pid]##Generating Max LA volume during follow-up
+dim(test)
+summary(test$echo_la)
+test$echo_la_max<-test$echo_la
+test<-test %>% select("pid","echo_la_max")
+ll<-merge(ll,test,all.x=TRUE)
+dim(ll)
+head(ll[order(-ll$pid),c("pid","echo_la","echo_la_max", "echo_la_mean")],30)
+
+ll<-ll %>% mutate(echo_la_max_40=case_when((echo_la_max>40 & !is.na(echo_la_max))~"1",(echo_la_max<=40 & !is.na(echo_la_max))~"0",TRUE~NA_character_))
+table(ll$echo_la_max_40,useNA="always")
+ll<-ll %>% mutate(echo_la_mean_40=case_when((echo_la_mean>40 & !is.na(echo_la_mean))~"1",(echo_la_mean<=40 & !is.na(echo_la_mean))~"0",TRUE~NA_character_))
+table(ll$echo_la_mean_40,useNA="always")
+
+
+ll$test<-ll$echo_la###Generating Carry Forward LA volume
+ll<-ll %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("down")) %>%
+  dplyr::ungroup()
+head(ll[order(-ll$pid),c("pid","echo_la","echo_la_max", "echo_la_mean","test")],500)
+
+ll<-ll %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("up")) %>%
+  dplyr::ungroup()
+head(ll[order(-ll$pid),c("pid","echo_la","echo_la_max", "echo_la_mean","test")],500)
+
+ll$echo_la_carryforward<-ll$test
+ll<-ll %>% mutate(echo_la_carryforward_40=case_when((echo_la_carryforward>40 & !is.na(echo_la_carryforward))~"1",(echo_la_carryforward<=40 & !is.na(echo_la_carryforward))~"0",TRUE~NA_character_))
+table(ll$echo_la_carryforward_40,useNA="always")
+
+ll<-ll %>% group_by(pid) %>%  mutate(echo_max_lv_thickness_mean=mean(echo_max_lv_thickness,na.rm=TRUE))##Generating Mean Max LV wall thickness
+ungroup(ll)
+head(ll[order(-ll$pid),c("pid","echo_max_lv_thickness","echo_max_lv_thickness_mean")],30)
+ll<-ll %>% select(-echo_max_lv_thickness_max)
+test<-setDT(ll)[ , .SD[which.max(echo_max_lv_thickness)], by = pid]##Generating Max LV wall thickness during follow-up
+dim(test)
+summary(test$echo_max_lv_thickness)
+test$echo_max_lv_thickness_max<-test$echo_max_lv_thickness
+test<-test %>% select("pid","echo_max_lv_thickness_max")
+ll<-merge(ll,test,all.x=TRUE)
+dim(ll)
+head(ll[order(-ll$pid),c("pid","echo_max_lv_thickness","echo_max_lv_thickness_max", "echo_max_lv_thickness_mean")],30)
+
+ll<-ll %>% mutate(echo_max_lv_thickness_max_30=case_when((echo_max_lv_thickness_max>30 & !is.na(echo_max_lv_thickness_max))~"1",(echo_max_lv_thickness_max<=30 & !is.na(echo_max_lv_thickness_max))~"0",TRUE~NA_character_))
+table(ll$echo_max_lv_thickness_max_30,useNA="always")
+ll<-ll %>% mutate(echo_max_lv_thickness_mean_30=case_when((echo_max_lv_thickness_mean>30 & !is.na(echo_max_lv_thickness_mean))~"1",(echo_max_lv_thickness_mean<=30 & !is.na(echo_max_lv_thickness_mean))~"0",TRUE~NA_character_))
+table(ll$echo_max_lv_thickness_mean_30,useNA="always")
+
+ll$test<-ll$echo_max_lv_thickness###Generating Carry Forward LV Wall Thickness
+ll<-ll %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("down")) %>%
+  dplyr::ungroup()
+head(ll[order(-ll$pid),c("pid","echo_max_lv_thickness","echo_max_lv_thickness_max", "echo_max_lv_thickness_mean","test")],500)
+
+ll<-ll %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("up")) %>%
+  dplyr::ungroup()
+head(ll[order(-ll$pid),c("pid","echo_max_lv_thickness","echo_max_lv_thickness_max", "echo_max_lv_thickness_mean","test")],500)
+
+ll$echo_max_lv_thickness_carryforward<-ll$test
+ll<-ll %>% mutate(echo_max_lv_thickness_carryforward_30=case_when((echo_max_lv_thickness_carryforward>30 & !is.na(echo_max_lv_thickness_carryforward))~"1",(echo_max_lv_thickness_carryforward<=30 & !is.na(echo_max_lv_thickness_carryforward))~"0",TRUE~NA_character_))
+table(ll$echo_max_lv_thickness_carryforward_30,useNA="always")
+
+
+ll<-ll %>% group_by(pid) %>%  mutate(ef_mean=mean(ef,na.rm=TRUE))##Generating Mean Ejection Fraction
+ungroup(ll)
+head(ll[order(-ll$pid),c("pid","ef","ef_mean")],30)
+test<-setDT(ll)[ , .SD[which.min(ef)], by = pid]##Generating minimum Ejection Fraction during follow-up
+dim(test)
+summary(test$ef)
+test$ef_min<-test$ef
+test<-test %>% select("pid","ef_min")
+ll<-merge(ll,test,all.x=TRUE)
+dim(ll)
+head(ll[order(-ll$pid),c("pid","ef","ef_mean", "ef_min")],30)
+
+ll<-ll %>% mutate(ef_min_50=case_when((ef_min<50 & !is.na(ef_min))~"1",(ef_min>=50 & !is.na(ef_min))~"0",TRUE~NA_character_))
+table(ll$ef_min_50,useNA="always")
+ll<-ll %>% mutate(ef_mean_50=case_when((ef_mean<50 & !is.na(ef_mean))~"1",(ef_mean>=50 & !is.na(ef_mean))~"0",TRUE~NA_character_))
+table(ll$ef_mean_50,useNA="always")
+
+ll$test<-ll$ef###Generating Carry Forward Ejection Fraction
+ll<-ll %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("down")) %>%
+  dplyr::ungroup()
+head(ll[order(-ll$pid),c("pid","ef","ef_min", "ef_mean","test")],500)
+
+ll<-ll %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("up")) %>%
+  dplyr::ungroup()
+head(ll[order(-ll$pid),c("pid","ef","ef_min", "ef_mean","test")],500)
+
+
+ll$ef_carryforward<-ll$test
+ll<-ll %>% mutate(ef_carryforward_50=case_when((ef_carryforward<50 & !is.na(ef_carryforward))~"1",(ef_carryforward>=50 & !is.na(ef_carryforward))~"0",TRUE~NA_character_))
+table(ll$ef_carryforward_50,useNA="always")
+
+
+ll<-ll %>% group_by(pid) %>%mutate(max_lvoto_mean=mean(max_lvoto,na.rm=TRUE))##Generating Mean LVOT gradient
+ungroup(ll)
+head(ll[order(-ll$pid),c("pid","max_lvoto","max_lvoto_mean")],30)
+ll<-ll %>% select(-max_lvoto_max)
+test<-setDT(ll)[ , .SD[which.max(max_lvoto)], by = pid]##Generating maximum LVOT gradient during follow-up
+dim(test)
+summary(test$max_lvoto)
+test$max_lvoto_max<-test$max_lvoto
+test<-test %>% select("pid","max_lvoto_max")
+ll<-merge(ll,test,all.x=TRUE)
+dim(ll)
+head(ll[order(-ll$pid),c("pid","max_lvoto","max_lvoto_mean", "max_lvoto_max")],30)
+
+ll<-ll %>% mutate(max_lvoto_max_50=case_when((max_lvoto_max>50 & !is.na(max_lvoto_max))~"1",(max_lvoto_max<=50 & !is.na(max_lvoto_max))~"0",TRUE~NA_character_))
+table(ll$max_lvoto_max_50,useNA="always")
+ll<-ll %>% mutate(max_lvoto_mean_50=case_when((max_lvoto_mean>50 & !is.na(max_lvoto_mean))~"1",(max_lvoto_mean<=50 & !is.na(max_lvoto_mean))~"0",TRUE~NA_character_))
+table(ll$max_lvoto_mean_50,useNA="always")
+
+ll$test<-ll$max_lvoto###Generating Carry Forward LVOTO
+ll<-ll %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("down")) %>%
+  dplyr::ungroup()
+head(ll[order(-ll$pid),c("pid","max_lvoto","max_lvoto_mean", "max_lvoto_max","test")],500)
+
+ll<-ll %>%
+  dplyr::group_by(pid) %>%
+  fill(test, .direction = c("up")) %>%
+  dplyr::ungroup()
+head(ll[order(-ll$pid),c("pid","max_lvoto","max_lvoto_mean", "max_lvoto_max","test")],500)
+
+ll$max_lvoto_carryforward<-ll$test
+ll<-ll %>% mutate(max_lvoto_carryforward_50=case_when((max_lvoto_carryforward>50 & !is.na(max_lvoto_carryforward))~"1",(max_lvoto_carryforward<=50 & !is.na(max_lvoto_carryforward))~"0",TRUE~NA_character_))
+table(ll$max_lvoto_carryforward_50,useNA="always")
+
+
+model3<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ isus + enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now  + echo_max_lv_thickness_carryforward_30 + echo_la_carryforward_40 + max_lvoto_carryforward_50 + ef_carryforward_50 + cluster(pid),ll)
+summary(model3)
+
+
+mm<-ll[!(is.na(ll$echo_max_lv_thickness_carryforward_30) | is.na(ll$echo_la_carryforward_40) | is.na(ll$max_lvoto_carryforward_50) | is.na(ll$ef_carryforward_50)),]
+table(duplicated(mm$pid))
+
+######Interaction Analysis US vs. Non-US##
+summary(coxph(Surv(time, time_1, medicalhx_icd_now) ~ enrollment_year_cat + isus*esc_riskscore_carryforward +  cluster(pid),ll))###Interaction with ESC risk score
+summary(coxph(Surv(time, time_1, medicalhx_icd_now) ~ enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + isus*medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now + cluster(pid),ll))###Interaction with FHx of SCD
+summary(coxph(Surv(time, time_1, medicalhx_icd_now) ~ enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + isus*medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now + cluster(pid),ll))###Interaction with NSVT
+summary(coxph(Surv(time, time_1, medicalhx_icd_now) ~ enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + isus*medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now + cluster(pid),ll))###Interaction with Syncope
+ll<-ll %>% mutate(age_60=case_when(age<60~"1",age>=60~"0"))
+table(ll$age_60,useNA="always")
+summary(coxph(Surv(time, time_1, medicalhx_icd_now) ~ enrollment_year_cat+ isus*age_60 + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now + cluster(pid),ll))###Interaction with age
+ll<-ll %>% mutate(echo_max_lv_thickness_carryforward_sd=echo_max_lv_thickness_carryforward/sd(echo_max_lv_thickness_carryforward,na.rm=TRUE))
+ll<-ll %>% mutate(echo_la_carryforward_sd=echo_la_carryforward/sd(echo_la_carryforward,na.rm=TRUE))
+summary(ll$echo_la_carryforward_sd)
+ll<-ll %>% mutate(ef_carryforward_sd=ef_carryforward/sd(ef_carryforward,na.rm=TRUE))
+summary(ll$ef_carryforward_sd)
+ll<-ll %>% mutate(max_lvoto_carryforward_sd=max_lvoto_carryforward/sd(max_lvoto_carryforward,na.rm=TRUE))
+summary(ll$max_lvoto_carryforward_sd)
+summary(coxph(Surv(time, time_1, medicalhx_icd_now) ~  enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now  + isus*echo_max_lv_thickness_carryforward_sd + echo_la_carryforward_sd + max_lvoto_carryforward_sd + ef_carryforward_sd + cluster(pid),ll))###Interaction with max LV thickness continuous
+summary(coxph(Surv(time, time_1, medicalhx_icd_now) ~  enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now  + echo_max_lv_thickness_carryforward_sd + isus*echo_la_carryforward_sd + max_lvoto_carryforward_sd + ef_carryforward_sd + cluster(pid),ll))###Interaction with LA size continuous
+summary(coxph(Surv(time, time_1, medicalhx_icd_now) ~  enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now  + echo_max_lv_thickness_carryforward_sd + echo_la_carryforward_sd + isus*max_lvoto_carryforward_sd + ef_carryforward_sd + cluster(pid),ll))###Interaction with max lvot continuous
+summary(coxph(Surv(time, time_1, medicalhx_icd_now) ~  enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now  + echo_max_lv_thickness_carryforward_sd + echo_la_carryforward_sd + max_lvoto_carryforward_sd + isus*ef_carryforward_sd + cluster(pid),ll))###Interaction with Ejection Fraction continuous
+
+######Cox Regression For Primary Prevention ICD Implant in US Cohort##
+ll_us<-ll %>% filter(isus=="Yes")
+model2_us<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ enrollment_year_cat + esc_riskscore_carryforward +  cluster(pid),ll_us)
+summary(model2_us)
+
+model3_us<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ enrollment_year_cat+ age_60 + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now + cluster(pid),ll_us)
+summary(model3_us)
+
+model4_us<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ enrollment_year_cat+ age_60 + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now  + echo_max_lv_thickness_carryforward_sd + echo_la_carryforward_sd + max_lvoto_carryforward_sd + ef_carryforward_sd + cluster(pid),ll_us)
+summary(model4_us)
+
+######Cox Regression For Primary Prevention ICD Implant in Non-US Cohort##
+ll_non_us<-ll %>% filter(isus=="No")
+model2_non_us<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ enrollment_year_cat+ esc_riskscore_carryforward +  cluster(pid),ll_non_us)
+summary(model2_non_us)
+
+model3_non_us<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ enrollment_year_cat+ age_60 + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now + cluster(pid),ll_non_us)
+summary(model3_non_us)
+
+model4_non_us<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ enrollment_year_cat+ age_60 + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now  + echo_max_lv_thickness_carryforward_sd + echo_la_carryforward_sd + max_lvoto_carryforward_50 + ef_carryforward_50 + cluster(pid),ll_non_us)
+summary(model4_non_us)
+
+
+
+#####Analysis <2014***
+summary(ll$eventyear)
+ll<-ll[order(ll$pid,ll$age),]
+head(ll[c("pid","age","eventyear")])
+ll_less_than_2014<-ll %>% filter(eventyear<2014)
+
+model1<-coxph(Surv(time,time_1,medicalhx_icd_now) ~ isus + enrollment_year_cat + cluster(pid),ll_less_than_2014)
+summary(model1)
+surv_object_10<-Surv(ll_less_than_2014$time,ll_less_than_2014$time_1, ll_less_than_2014$medicalhx_icd_now)
+sfit_10 <- survfit(surv_object_10 ~ isus, data = ll_less_than_2014)
+options(max.print=100000)
+summary(sfit_10)
+ggsurvplot(sfit_10, data = ll_less_than_2014,risk.table="nrisk_cumevents",fun="cumhaz",surv.plot.height=0.72,risk.table.height=0.28,palette="grey",ylim=c(0,0.5),ggtheme=theme_classic2())
+
+
+model2<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ isus + enrollment_year_cat+esc_riskscore_carryforward_cat+ cluster(pid),ll_less_than_2014)
+summary(model2)
+
+model3<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ isus + enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now + cluster(pid),ll_less_than_2014)
+summary(model3)
+
+model4<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ isus + enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now + echo_max_lv_thickness_carryforward_30 + echo_la_carryforward_40 + max_lvoto_carryforward_50 + ef_carryforward_50 + cluster(pid),ll_less_than_2014)
+summary(model4)
+
+
+#####Analysis >=2014***
+ll_greater_than_2014<-ll %>% filter(eventyear>=2014)
+table(ll_greater_than_2014$medicalhx_icd,ll_greater_than_2014$medicalhx_icd_now,useNA="always")
+ll_greater_than_2014<-ll_greater_than_2014[order(ll_greater_than_2014$pid,ll_greater_than_2014$age),]
+ll_greater_than_2014<-ll_greater_than_2014 %>% group_by(pid) %>% mutate(replicate_new=seq(n()))
+ll_greater_than_2014<-ll_greater_than_2014[order(ll_greater_than_2014$pid,-ll_greater_than_2014$age),]
+ll_greater_than_2014<-ll_greater_than_2014 %>% group_by(pid) %>% mutate(replicate_reverse=seq(n()))
+ungroup(ll_greater_than_2014)
+head(ll_greater_than_2014[,c("pid","age","replicate_new","replicate_reverse","replicate")],100)
+ll_greater_than_2014<-ll_greater_than_2014[order(ll_greater_than_2014$pid,ll_greater_than_2014$age),]
+ll_greater_than_2014<-ll_greater_than_2014 %>% group_by(pid) %>% mutate(age_reference=case_when(replicate_new==1~age)) %>% 
+  fill(age_reference)
+summary(ll_greater_than_2014$age_reference)
+head(ll_greater_than_2014[,c("pid","age","age_reference","replicate_new","replicate")],100)
+ll_greater_than_2014<-ll_greater_than_2014 %>% mutate(time=age-age_reference)
+summary(ll_greater_than_2014$time)
+head(ll_greater_than_2014[,c("pid","age","replicate_new","replicate","time")],100)
+ll_greater_than_2014<-setDT(ll_greater_than_2014)
+ll_greater_than_2014[, time_1 := c(time[-1], NA ), by = .(pid)]
+head(ll_greater_than_2014[,c("pid","age","replicate_new","replicate","replicate_reverse","time","time_1")],100)
+ll_greater_than_2014<-as.data.frame(ll_greater_than_2014)
+summary(ll_greater_than_2014$time_1)
+summary(ll_greater_than_2014[is.na(ll_greater_than_2014$time_1),"replicate_reverse"])
+ll_greater_than_2014<-ll_greater_than_2014 %>% mutate(time_1=case_when(replicate_reverse==1~(time+0.01),TRUE~time_1))
+head(ll_greater_than_2014[,c("pid","age","replicate_new","replicate","replicate_reverse","time","time_1")],100)
+summary(ll_greater_than_2014$time_1)
+head(ll_greater_than_2014[,c("pid","age","replicate_new","replicate","replicate_reverse","time","time_1","eventyear","enrollment_year")],40)
+
+
+model1<-coxph(Surv(time,time_1,medicalhx_icd_now) ~ isus + enrollment_year_cat + cluster(pid),ll_greater_than_2014)
+summary(model1)
+surv_object_10<-Surv(ll_greater_than_2014$time,ll_greater_than_2014$time_1, ll_greater_than_2014$medicalhx_icd_now)
+sfit_10 <- survfit(surv_object_10 ~ isus, data = ll_greater_than_2014)
+summary(sfit_10)
+ggsurvplot(sfit_10, data = ll_greater_than_2014,risk.table="nrisk_cumevents",fun="cumhaz",surv.plot.height=0.72,risk.table.height=0.28,palette="grey",ylim=c(0,0.5),ggtheme=theme_classic2())
+
+model2<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ isus + enrollment_year_cat+esc_riskscore_carryforward_cat+ cluster(pid),ll_greater_than_2014)
+summary(model2)
+
+model3<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ isus + enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now + cluster(pid),ll_greater_than_2014)
+summary(model3)
+
+model4<-coxph(Surv(time, time_1, medicalhx_icd_now) ~ isus + enrollment_year_cat+ age_cat + white + demographics_sex + medicalhx_afib_now + medicalhx_cad_now + medicalhx_scd_family_hx  + medicalhx_nsvt_now + medicalhx_syncope_now + medicalhx_septal_reduction_therapy_now + echo_max_lv_thickness_carryforward_30 + echo_la_carryforward_40 + max_lvoto_carryforward_50 + ef_carryforward_50 + cluster(pid),ll_greater_than_2014)
+summary(model4)
+
+
+
+```
